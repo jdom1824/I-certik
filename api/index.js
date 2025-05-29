@@ -1,0 +1,71 @@
+require("dotenv").config();
+const express = require("express");
+const { ethers } = require("ethers");
+const fs = require("fs");
+const app = express();
+app.use(express.json());
+
+// Carga el ABI
+const path = require("path");
+const abiPath = path.resolve(__dirname, "../artifacts/contracts/CertificadosOnChainConexalab.sol/CertificadosOnChainConexalab.json");
+const abi = JSON.parse(fs.readFileSync(abiPath)).abi;
+
+
+// Configura el provider y signer
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "http://127.0.0.1:8545/");
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, abi, wallet);
+
+// --- Endpoint para mintear un NFT (solo owner) ---
+app.post("/mint", async (req, res) => {
+    try {
+        const { nombre, cedula, descripcion, fecha } = req.body;
+        if (!nombre || !cedula || !descripcion || !fecha) {
+            return res.status(400).json({ error: "Faltan datos en el body." });
+        }
+
+        const tx = await contract.mintCertificado(nombre, cedula, descripcion, fecha);
+        const receipt = await tx.wait();
+
+        // Decodificar logs para obtener el tokenId
+        const iface = new ethers.Interface([
+            "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)"
+        ]);
+        let tokenId;
+        for (const log of receipt.logs) {
+            try {
+                const parsed = iface.parseLog(log);
+                if (parsed && parsed.name === "Transfer") {
+                    tokenId = parsed.args.tokenId.toString();
+                    break;
+                }
+            } catch (e) {}
+        }
+
+        return res.json({ success: true, tokenId });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Endpoint para obtener data de un NFT ---
+app.get("/nft/:cedula", async (req, res) => {
+    try {
+        const cedulaNum = parseInt(req.params.cedula);
+        const owner = await contract.ownerOf(cedulaNum);
+        const tokenURI = await contract.tokenURI(cedulaNum);
+        const base64Data = tokenURI.replace("data:application/json;base64,", "");
+        const json = Buffer.from(base64Data, "base64").toString("utf-8");
+        const data = JSON.parse(json);
+        res.json({
+            owner,
+            ...data
+        });
+    } catch (err) {
+        res.status(404).json({ error: "No existe certificado para esa cédula" });
+    }
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`API corriendo en http://localhost:${PORT}`));
