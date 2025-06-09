@@ -4,15 +4,10 @@ const { ethers } = require("ethers");
 const fs = require("fs");
 const app = express();
 app.use(express.json());
-
-// Carga el ABI
 const path = require("path");
 const abiPath = path.resolve(__dirname, "../artifacts/contracts/CertificadosOnChainConexalab.sol/CertificadosOnChainConexalab.json");
 const abi = JSON.parse(fs.readFileSync(abiPath)).abi;
-
-
-// Configura el provider y signer
-const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "http://127.0.0.1:8545/");
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, abi, wallet);
 
