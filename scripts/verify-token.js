@@ -1,8 +1,10 @@
-const hre = require("hardhat");
-require('dotenv').config();
+const { ethers } = require("ethers");
+require("dotenv").config();
 
 async function main() {
     const contractAddress = process.env.CONTRACT_ADDRESS;
+    const rpcUrl = process.env.RPC_URL;
+
     // Permite pasar la cédula/tokenId como argumento
     const tokenId = process.argv[2] ? parseInt(process.argv[2]) : 0;
 
@@ -11,11 +13,21 @@ async function main() {
         process.exit(1);
     }
 
-    // Carga el contrato
-    const CertificadosOnChain = await hre.ethers.getContractFactory("CertificadosOnChainConexalab");
-    const certificados = CertificadosOnChain.attach(contractAddress);
+    if (!rpcUrl) {
+        console.error("Falta la variable RPC_URL en tu .env");
+        process.exit(1);
+    }
 
-    // 1. Obtiene el owner del token
+    // Cargar el ABI compilado del contrato
+    const contractJson = require("../artifacts/contracts/CertificadosOnChainConexalab.sol/CertificadosOnChainConexalab.json");
+
+    // Conectar al proveedor de la testnet (ej: Sepolia)
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+    // Instancia del contrato
+    const certificados = new ethers.Contract(contractAddress, contractJson.abi, provider);
+
+    // 1. Obtener el owner del token
     let owner;
     try {
         owner = await certificados.ownerOf(tokenId);
@@ -25,11 +37,10 @@ async function main() {
         process.exit(1);
     }
 
-    // 2. Obtiene el tokenURI y decodifica la data base64
+    // 2. Obtener el tokenURI y decodificar base64
     const tokenURI = await certificados.tokenURI(tokenId);
     console.log("tokenURI:", tokenURI);
 
-    // Extrae y decodifica la parte base64 (el JSON)
     const base64Data = tokenURI.replace("data:application/json;base64,", "");
     const json = Buffer.from(base64Data, "base64").toString("utf-8");
     const data = JSON.parse(json);
