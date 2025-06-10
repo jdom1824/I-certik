@@ -1,47 +1,53 @@
-const { ethers } = require("ethers");
+const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
-// Cargamos el ABI y Bytecode del contrato compilado
-const contractJson = require("../artifacts/contracts/CertificadosOnChainConexalab.sol/CertificadosOnChainConexalab.json");
-
 async function main() {
-  // Crear un provider con la RPC externa
-  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+  // Obtén la cuenta del owner (usada por default)
+  const [owner] = await hre.ethers.getSigners();
 
-  // Crear una wallet desde la clave privada
-  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  // Despliega el contrato "CertificadosOnChain"
+  const CertificadosOnChain = await hre.ethers.getContractFactory("CertificadosOnChainConexalab", owner);
+  const certificados = await CertificadosOnChain.deploy();
 
-  // Crear instancia del contrato factory
-  const factory = new ethers.ContractFactory(contractJson.abi, contractJson.bytecode, wallet);
+  // Espera a que el contrato se despliegue completamente
+  if (typeof certificados.waitForDeployment === "function") {
+    await certificados.waitForDeployment();
+  } else {
+    await certificados.deployed();
+  }
 
-  console.log("Deploying contract...");
-  const contract = await factory.deploy();
+  // Obtén la dirección del contrato desplegado
+  const contractAddress = certificados.target || certificados.address || await certificados.getAddress();
+  console.log("CertificadosOnChain deployed to:", contractAddress);
 
-  await contract.waitForDeployment(); // Esto es ethers v6+
-  const contractAddress = await contract.getAddress();
-
-  console.log("Contract deployed at:", contractAddress);
-
-  // Guardar en el archivo .env
+  // Ruta del archivo .env
   const envPath = path.resolve(__dirname, "../.env");
 
+  // Cargar el contenido actual del .env (si existe)
   let envContent = "";
   if (fs.existsSync(envPath)) {
     envContent = fs.readFileSync(envPath, "utf8");
   }
 
+  // Buscar si ya existe una línea con CONTRACT_ADDRESS y reemplazarla
   const newEnvContent = envContent.includes("CONTRACT_ADDRESS=")
     ? envContent.replace(/CONTRACT_ADDRESS=.*/g, `CONTRACT_ADDRESS=${contractAddress}`)
     : envContent + `\nCONTRACT_ADDRESS=${contractAddress}`;
 
+  // Escribir en el archivo .env
   fs.writeFileSync(envPath, newEnvContent.trim(), "utf8");
 
-  console.log("Contract address saved to .env.");
+  console.log(`Contract address saved to .env file.`);
+
+  // Mostrar la nueva dirección guardada
+  process.env.CONTRACT_ADDRESS = contractAddress;
+  console.log("Updated process.env.CONTRACT_ADDRESS:", process.env.CONTRACT_ADDRESS);
 }
 
+// Manejo de errores
 main().catch((error) => {
-  console.error("Error deploying contract:", error);
-  process.exit(1);
+  console.error(error);
+  process.exitCode = 1;
 });
