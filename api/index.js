@@ -1,8 +1,12 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const { ethers } = require("ethers");
 const fs = require("fs");
 const app = express();
+app.use(cors({
+  origin: "https://token-mamus.web.app"
+}));
 app.use(express.json());
 const path = require("path");
 const abiPath = path.resolve(__dirname, "../artifacts/contracts/CertificadosOnChainConexalab.sol/CertificadosOnChainConexalab.json");
