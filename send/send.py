@@ -30,7 +30,7 @@ fecha_actual = datetime.now().strftime("%d de %B de %Y")
 # ----------------------------------------
 load_dotenv()
 CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
-# Si luego vas a enviar correo necesitarás también SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD en tu .env
+# (y si vas a enviar correo, también SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD)
 
 # ----------------------------------------
 # 2. Validar argumentos
@@ -38,7 +38,6 @@ CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
 if len(sys.argv) != 4:
     print("Uso: python send.py <nombre> <cedula> <correo>")
     sys.exit(1)
-
 nombre, cedula, correo = sys.argv[1], sys.argv[2], sys.argv[3]
 
 # ----------------------------------------
@@ -50,7 +49,6 @@ descripcion = (
     "to learning and applying rocket engineering for a total of 25 hours."
 )
 fecha_api = "04/11/2024"
-
 mint_payload = {
     "nombre": nombre,
     "cedula": cedula,
@@ -63,9 +61,9 @@ try:
     resp.raise_for_status()
     data = resp.json()
     print("Respuesta mint:", data)
-    token_id = data.get("tokenId")  # ojo: la API devuelve "tokenId"
+    token_id = data.get("tokenId")
     if token_id is None:
-        raise ValueError("No se recibió tokenId en la respuesta")
+        raise ValueError("No se recibió tokenId")
     token_id = str(token_id)
     print(f"Token mintiado ID={token_id}")
 except Exception as e:
@@ -73,11 +71,11 @@ except Exception as e:
     sys.exit(1)
 
 # ----------------------------------------
-# 4. Generar captura con Selenium (solo la <img>)
+# 4. Captura con Selenium (solo el contenedor del certificado)
 # ----------------------------------------
 base_url = "https://token-mamus.web.app"
 
-# Configuración de Chrome en modo headless
+# Configurar Chrome headless
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
@@ -91,8 +89,10 @@ try:
     driver.get(base_url)
     wait = WebDriverWait(driver, 15)
 
-    # 4.1) Rellenar cédula
-    input_el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='text']")))
+    # 4.1) Rellenar la cédula
+    input_el = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, "input[type='text']")
+    ))
     input_el.clear()
     input_el.send_keys(cedula)
 
@@ -100,7 +100,6 @@ try:
     try:
         btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
     except:
-        # Fallback: buscar por texto
         for b in driver.find_elements(By.TAG_NAME, "button"):
             if b.text.strip().lower() == "buscar":
                 btn = b
@@ -109,11 +108,13 @@ try:
             raise RuntimeError("No encontré el botón Buscar")
     btn.click()
 
-    # 4.3) Esperar a que el <img> del certificado sea visible
-    certificado_sel = "img.certificate-image"  # <-- AJUSTA este selector a tu HTML real
-    el_cert = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, certificado_sel)))
+    # 4.3) Esperar a que el contenedor del certificado sea visible
+    certificado_sel = "div.certificado"  # <— selector del <div class="certificado">
+    el_cert = wait.until(EC.visibility_of_element_located(
+        (By.CSS_SELECTOR, certificado_sel)
+    ))
 
-    # 4.4) Tomar screenshot solo del elemento <img>
+    # 4.4) Capturar solo ese elemento
     os.makedirs("certificados", exist_ok=True)
     ruta_cert = os.path.join("certificados", f"cert_{cedula}.png")
     el_cert.screenshot(ruta_cert)
@@ -123,7 +124,7 @@ finally:
     driver.quit()
 
 # ----------------------------------------
-# 5. (Opcional) Envío de correo
+# 5. (Opcional) Envío por correo
 # ----------------------------------------
-# Si ya lo tienes preparado, aquí podrías reactivar tu código de smtplib
-# usando `ruta_cert` y `token_id`. Guárdate este valor para adjuntar.
+# Aquí puedes reactivar tu sección de smtplib,
+# adjuntando `ruta_cert` y usando `token_id`.
