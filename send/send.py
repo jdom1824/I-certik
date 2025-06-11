@@ -40,7 +40,9 @@ try:
     response = requests.post("https://certic-44.duckdns.org/mint", json=mint_payload)
     response.raise_for_status()
     response_data = response.json()
+    print("Respuesta completa del mint:", response_data)
     token_id = str(response_data.get("token_id"))
+
     if not token_id:
         print("Error: No se recibió token_id.")
         print("Respuesta completa:", response_data)
