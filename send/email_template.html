@@ -6,39 +6,75 @@
   <title>Certificado NFT</title>
   <style>
     body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
     }
     .container {
-        max-width: 600px;
-        margin: 20px auto;
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        text-align: center;
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
     }
-    /* … aquí va todo tu CSS con llaves sin tocar … */
+    .certificate-info {
+      background-color: #e8f0fe;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .button {
+      display: inline-block;
+      background-color: #0073b1;
+      color: #ffffff;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      text-decoration: none;
+      border-radius: 6px;
+      margin: 10px 5px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s ease;
+    }
+    .button:hover {
+      background-color: #005582;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777777;
+    }
+    img {
+      margin: 20px auto;
+      max-width: 100%;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>¡Hola, $nombre!</h1>
     <p>Enhorabuena: aquí tienes tu certificado NFT de asistencia.</p>
+    
     <div class="certificate-info">
       <p>Certificado NFT de Asistencia</p>
       <p>Evento: Aerospace Engineering Bootcamp</p>
       <p>Fecha: $fecha</p>
     </div>
+
     <p>Vista previa de tu certificado:</p>
     <img src="cid:certimg" alt="Certificado NFT" style="width:300px;"/>
-    <p>
-      <a href="https://instagram.com/conexalab" class="button" target="_blank">Ver en Instagram</a>
-      <a href="https://facebook.com/conexalab" class="button" target="_blank">Ver en Facebook</a>
+
+    <div>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=$viewer_link" class="button" target="_blank">Compartir en Facebook</a>
+      <a href="https://www.instagram.com/conexalab/" class="button" target="_blank">Visita Instagram</a>
       <a href="$viewer_link" class="button" target="_blank">Ver Certificado</a>
-    </p>
+    </div>
+
     <div class="footer">
       <p>Gracias por participar en nuestro evento.</p>
       <p>Equipo de ConexaLab</p>
