@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import locale
 import time
+from string import Template
 
 # Selenium imports
 from selenium import webdriver
@@ -26,48 +27,48 @@ from email.mime.image     import MIMEImage
 # Función para enviar el correo con plantilla
 # ----------------------------------------
 def send_email_with_template(to_email, nombre, fecha, ruta_cert, viewer_link, token_id, contract_address):
-    # Leer credenciales SMTP de .env
+    # 1) Leer credenciales SMTP de .env
     SMTP_SERVER  = os.getenv("SMTP_SERVER")
     SMTP_PORT    = int(os.getenv("SMTP_PORT", 587))
     SENDER_EMAIL = os.getenv("SENDER_EMAIL")
     SENDER_PASS  = os.getenv("SENDER_PASSWORD")
 
-    # Construir URLs dinámicas
+    # 2) Construir URLs dinámicas
     verification_url = f"https://basescan.org/token/{contract_address}?a={token_id}"
     linkedin_share   = f"https://www.linkedin.com/sharing/share-offsite/?url={viewer_link}"
 
-    # Leer y formatear la plantilla HTML
-    template_path = os.path.join(os.path.dirname(__file__), "email_template.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        html_template = f.read()
-    html_body = html_template.format(
+    # 3) Leer y procesar plantilla con string.Template
+    tpl_path = os.path.join(os.path.dirname(__file__), "email_template.html")
+    with open(tpl_path, "r", encoding="utf-8") as f:
+        tpl_str = f.read()
+    tpl = Template(tpl_str)
+    html_body = tpl.substitute(
         nombre=nombre,
         fecha=fecha,
         linkedin_share=linkedin_share,
         verification_url=verification_url
     )
 
-    # Construir el mensaje MIME
+    # 4) Construir mensaje MIME
     msg = MIMEMultipart("related")
     msg["From"]    = SENDER_EMAIL
     msg["To"]      = to_email
     msg["Subject"] = f"🎓 {nombre}, tu certificado NFT de CONEXALAB"
     msg.attach(MIMEText(html_body, "html"))
 
-    # Adjuntar la imagen del certificado
+    # 5) Adjuntar la imagen del certificado
     with open(ruta_cert, "rb") as img_file:
         img = MIMEImage(img_file.read())
         img.add_header("Content-ID", "<certimg>")
         msg.attach(img)
 
-    # Enviar el correo
+    # 6) Enviar el correo
     with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASS)
         server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
 
     print(f"Correo enviado exitosamente a {to_email}")
-
 
 # ----------------------------------------
 # 0. Configurar locale en español para fechas
@@ -126,7 +127,6 @@ except Exception as e:
 # 4. Captura con Selenium (solo el contenedor del certificado)
 # ----------------------------------------
 base_url = "https://token-mamus.web.app"
-
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
@@ -141,9 +141,7 @@ try:
     wait = WebDriverWait(driver, 15)
 
     # 4.1) Rellenar la cédula
-    input_el = wait.until(EC.presence_of_element_located(
-        (By.CSS_SELECTOR, "input[type='text']")
-    ))
+    input_el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='text']")))
     input_el.clear()
     input_el.send_keys(cedula)
 
@@ -161,9 +159,7 @@ try:
 
     # 4.3) Esperar a que el contenedor del certificado sea visible
     certificado_sel = "div.certificado"  # selector del <div class="certificado">
-    el_cert = wait.until(EC.visibility_of_element_located(
-        (By.CSS_SELECTOR, certificado_sel)
-    ))
+    el_cert = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, certificado_sel)))
 
     # 4.4) Capturar solo ese elemento
     os.makedirs("certificados", exist_ok=True)
