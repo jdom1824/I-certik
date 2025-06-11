@@ -45,9 +45,9 @@ def send_email_with_template(to_email, nombre, fecha, ruta_cert, viewer_link, to
     html_body = tpl.substitute(
         nombre=nombre,
         fecha=fecha,
-        linkedin_share=linkedin_share,
-        verification_url=verification_url
+        viewer_link=viewer_link
     )
+
 
     # 4) Construir mensaje MIME
     msg = MIMEMultipart("related")
