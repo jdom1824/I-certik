@@ -16,6 +16,59 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
+# Email imports
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text      import MIMEText
+from email.mime.image     import MIMEImage
+
+# ----------------------------------------
+# Función para enviar el correo con plantilla
+# ----------------------------------------
+def send_email_with_template(to_email, nombre, fecha, ruta_cert, viewer_link, token_id, contract_address):
+    # Leer credenciales SMTP de .env
+    SMTP_SERVER  = os.getenv("SMTP_SERVER")
+    SMTP_PORT    = int(os.getenv("SMTP_PORT", 587))
+    SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+    SENDER_PASS  = os.getenv("SENDER_PASSWORD")
+
+    # Construir URLs dinámicas
+    verification_url = f"https://basescan.org/token/{contract_address}?a={token_id}"
+    linkedin_share   = f"https://www.linkedin.com/sharing/share-offsite/?url={viewer_link}"
+
+    # Leer y formatear la plantilla HTML
+    template_path = os.path.join(os.path.dirname(__file__), "email_template.html")
+    with open(template_path, "r", encoding="utf-8") as f:
+        html_template = f.read()
+    html_body = html_template.format(
+        nombre=nombre,
+        fecha=fecha,
+        linkedin_share=linkedin_share,
+        verification_url=verification_url
+    )
+
+    # Construir el mensaje MIME
+    msg = MIMEMultipart("related")
+    msg["From"]    = SENDER_EMAIL
+    msg["To"]      = to_email
+    msg["Subject"] = f"🎓 {nombre}, tu certificado NFT de CONEXALAB"
+    msg.attach(MIMEText(html_body, "html"))
+
+    # Adjuntar la imagen del certificado
+    with open(ruta_cert, "rb") as img_file:
+        img = MIMEImage(img_file.read())
+        img.add_header("Content-ID", "<certimg>")
+        msg.attach(img)
+
+    # Enviar el correo
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASS)
+        server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+
+    print(f"Correo enviado exitosamente a {to_email}")
+
+
 # ----------------------------------------
 # 0. Configurar locale en español para fechas
 # ----------------------------------------
@@ -30,7 +83,6 @@ fecha_actual = datetime.now().strftime("%d de %B de %Y")
 # ----------------------------------------
 load_dotenv()
 CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
-# (y si vas a enviar correo, también SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SENDER_PASSWORD)
 
 # ----------------------------------------
 # 2. Validar argumentos
@@ -75,7 +127,6 @@ except Exception as e:
 # ----------------------------------------
 base_url = "https://token-mamus.web.app"
 
-# Configurar Chrome headless
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
@@ -109,7 +160,7 @@ try:
     btn.click()
 
     # 4.3) Esperar a que el contenedor del certificado sea visible
-    certificado_sel = "div.certificado"  # <— selector del <div class="certificado">
+    certificado_sel = "div.certificado"  # selector del <div class="certificado">
     el_cert = wait.until(EC.visibility_of_element_located(
         (By.CSS_SELECTOR, certificado_sel)
     ))
@@ -124,7 +175,15 @@ finally:
     driver.quit()
 
 # ----------------------------------------
-# 5. (Opcional) Envío por correo
+# 5. Enviar el correo con la plantilla
 # ----------------------------------------
-# Aquí puedes reactivar tu sección de smtplib,
-# adjuntando `ruta_cert` y usando `token_id`.
+viewer_link = f"https://token-mamus.web.app/?cedula={cedula}"
+send_email_with_template(
+    to_email         = correo,
+    nombre           = nombre,
+    fecha            = fecha_actual,
+    ruta_cert        = ruta_cert,
+    viewer_link      = viewer_link,
+    token_id         = token_id,
+    contract_address = CONTRACT_ADDRESS
+)
