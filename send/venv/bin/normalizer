@@ -1,4 +1,4 @@
-#!/Users/jdom/Icertik/I-certik/send/venv/bin/python3
+#!/home/ec2-user/I-certik/send/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
