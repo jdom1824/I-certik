@@ -50,20 +50,21 @@ app.post("/mint", async (req, res) => {
 
 // --- Endpoint para obtener data de un NFT ---
 app.get("/nft/:cedula", async (req, res) => {
-    try {
-        const cedulaNum = parseInt(req.params.cedula);
-        const owner = await contract.ownerOf(cedulaNum);
-        const tokenURI = await contract.tokenURI(cedulaNum);
-        const base64Data = tokenURI.replace("data:application/json;base64,", "");
-        const json = Buffer.from(base64Data, "base64").toString("utf-8");
-        const data = JSON.parse(json);
-        res.json({
-            owner,
-            ...data
-        });
-    } catch (err) {
-        res.status(404).json({ error: "No existe certificado para esa cédula" });
-    }
+  try {
+    const cedulaNum = parseInt(req.params.cedula);
+    const owner = await contract.ownerOf(cedulaNum);
+    const tokenURI = await contract.tokenURI(cedulaNum);
+    const base64Data = tokenURI.replace("data:application/json;base64,", "");
+    const json = Buffer.from(base64Data, "base64").toString("utf-8");
+    const data = JSON.parse(json);
+    res.json({
+      contract: process.env.CONTRACT_ADDRESS, // ← nuevo campo
+      owner,
+      ...data
+    });
+  } catch (err) {
+    res.status(404).json({ error: "No existe certificado para esa cédula" });
+  }
 });
 
 const PORT = process.env.PORT || 3001;
