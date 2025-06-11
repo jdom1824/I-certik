@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import locale
 import time
+import ssl
 from string import Template
 
 # Selenium imports
@@ -62,13 +63,14 @@ def send_email_with_template(to_email, nombre, fecha, ruta_cert, viewer_link, to
         img.add_header("Content-ID", "<certimg>")
         msg.attach(img)
 
+
     # 6) Enviar el correo
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-        print("SMTP_SERVER:", SMTP_SERVER)
-        print("SMTP_PORT:", SMTP_PORT)
-        print("SENDER_EMAIL:", SENDER_EMAIL)
-        print("SENDER_PASS repr:", repr(SENDER_PASS))
-        server.login(SENDER_EMAIL, SENDER_PASS)
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        server.ehlo()        
+        context = ssl.create_default_context()                         # Saludo inicial
+        server.starttls(context=context)             # Inicia TLS
+        server.ehlo()                                 # Saludo tras TLS
+        server.login(SENDER_EMAIL, SENDER_PASS)       # Login con app-password
         server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
 
     print(f"Correo enviado exitosamente a {to_email}")
