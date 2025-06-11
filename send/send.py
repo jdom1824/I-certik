@@ -50,12 +50,13 @@ except Exception as e:
     print(f"Error durante el mint: {e}")
     sys.exit(1)
 
+
 # ---------- 2. HTML2IMAGE ----------
 viewer_url = f"https://token-mamus.web.app/?cedula={cedula}"
 filename = f"cert_{cedula}.png"
 
-# Ruta al ejecutable de Chromium, puede necesitar ajuste según tu entorno
-chromium_path = "/usr/bin/chromium-browser"
+# Ruta a Google Chrome (ajustado)
+chromium_path = "/usr/bin/google-chrome"  # <-- CAMBIO AQUÍ
 hti = Html2Image(output_path="certificados", browser_executable=chromium_path)
 
 try:
@@ -66,3 +67,4 @@ try:
 except Exception as e:
     print(f"Error al generar imagen: {e}")
     sys.exit(1)
+
