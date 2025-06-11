@@ -41,7 +41,7 @@ try:
     response.raise_for_status()
     response_data = response.json()
     print("Respuesta completa del mint:", response_data)
-    token_id = str(response_data.get("token_id"))
+    token_id = str(response_data.get("tokenId"))
 
     if not token_id:
         print("Error: No se recibió token_id.")
@@ -63,7 +63,7 @@ hti = Html2Image(output_path="certificados", browser_executable=chromium_path)
 
 try:
     os.makedirs("certificados", exist_ok=True)
-    hti.screenshot(url=viewer_url, save_as=filename, size=(1200, 800), wait_time=2)
+    hti.screenshot(url=viewer_url, save_as=filename, size=(1200, 800))
     ruta_imagen = os.path.join("certificados", filename)
     print(f"Imagen generada: {ruta_imagen}")
 except Exception as e:
