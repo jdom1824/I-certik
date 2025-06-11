@@ -39,24 +39,30 @@ mint_payload = {
 try:
     response = requests.post("https://certic-44.duckdns.org/mint", json=mint_payload)
     response.raise_for_status()
-    token_id = str(response.json().get("token_id"))
+    response_data = response.json()
+    token_id = str(response_data.get("token_id"))
     if not token_id:
-        print("❌ No se recibió token_id.")
+        print("Error: No se recibió token_id.")
+        print("Respuesta completa:", response_data)
         sys.exit(1)
-    print(f"✅ Token mintiado: ID {token_id}")
+    print(f"Token mintiado: ID {token_id}")
 except Exception as e:
-    print(f"❌ Error mint: {e}")
+    print(f"Error durante el mint: {e}")
     sys.exit(1)
 
 # ---------- 2. HTML2IMAGE ----------
 viewer_url = f"https://token-mamus.web.app/?cedula={cedula}"
-hti = Html2Image(output_path="certificados")
 filename = f"cert_{cedula}.png"
 
+# Ruta al ejecutable de Chromium, puede necesitar ajuste según tu entorno
+chromium_path = "/usr/bin/chromium-browser"
+hti = Html2Image(output_path="certificados", browser_executable=chromium_path)
+
 try:
+    os.makedirs("certificados", exist_ok=True)
     hti.screenshot(url=viewer_url, save_as=filename, size=(1200, 800), wait_time=2)
     ruta_imagen = os.path.join("certificados", filename)
-    print(f"📷 Imagen generada: {ruta_imagen}")
+    print(f"Imagen generada: {ruta_imagen}")
 except Exception as e:
-    print(f"❌ Error al generar imagen: {e}")
+    print(f"Error al generar imagen: {e}")
     sys.exit(1)
