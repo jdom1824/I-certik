@@ -64,7 +64,6 @@ def send_email_with_template(to_email, nombre, fecha, ruta_cert, viewer_link, to
 
     # 6) Enviar el correo
     with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
         print("SMTP_SERVER:", SMTP_SERVER)
         print("SMTP_PORT:", SMTP_PORT)
         print("SENDER_EMAIL:", SENDER_EMAIL)
