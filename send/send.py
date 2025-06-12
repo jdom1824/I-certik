@@ -101,7 +101,7 @@ descripcion = (
     "held at Colegio Interamericano from April 8 to 13, 2024. We proudly acknowledge your dedication "
     "to learning and applying rocket engineering for a total of 25 hours."
 )
-fecha_api = "04/11/2024"
+fecha_api = "April 13, 2024"
 mint_payload = {
     "nombre": nombre,
     "cedula": cedula,
