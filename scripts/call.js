@@ -1,35 +1,33 @@
-// totalSupply.js
+// call.js
+require("dotenv").config();               // 1) Carga .env antes de usar process.env
+const { ethers } = require("ethers");    // 2) Importa ethers
 
-require("dotenv").config();
-const { ethers } = require("ethers");
+// 3) Asegúrate de que RPC_URL esté definida
+if (!process.env.RPC_URL) {
+  console.error("❌ ERROR: falta la variable RPC_URL en .env");
+  process.exit(1);
+}
 
-// ABI mínimo con solo totalSupply()
+// 4) Crea el provider con la clase JsonRpcProvider
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+
+// 5) Instancia tu contrato
 const ABI = [
   "function totalSupply() view returns (uint256)"
 ];
-
-// Instancia del provider y del contrato
-const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
 const contract = new ethers.Contract(
   process.env.CONTRACT_ADDRESS,
   ABI,
   provider
 );
 
-/**
- * Devuelve el número total de tokens mintados.
- * @returns {Promise<string>}
- */
-async function fetchTotalSupply() {
-  try {
-    const supplyBN = await contract.totalSupply();
-    const supply = supplyBN.toString();
-    console.log("🔢 totalSupply:", supply);
-    return supply;
-  } catch (err) {
-    console.error("❌ Error al obtener totalSupply:", err);
-    throw err;
-  }
+async function main() {
+  // 6) Llama totalSupply
+  const supply = await contract.totalSupply();
+  console.log("🔢 totalSupply:", supply.toString());
 }
 
-module.exports = { fetchTotalSupply };
+main().catch(err => {
+  console.error("❌ Error en script:", err);
+  process.exit(1);
+});
