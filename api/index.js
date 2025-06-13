@@ -16,37 +16,67 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, abi, wallet);
 
 // --- Endpoint para mintear un NFT (solo owner) ---
+// --- Endpoint para mintear un NFT (solo owner) ---
 app.post("/mint", async (req, res) => {
-    try {
-        const { nombre, cedula, descripcion, fecha } = req.body;
-        if (!nombre || !cedula || !descripcion || !fecha) {
-            return res.status(400).json({ error: "Faltan datos en el body." });
-        }
-
-        const tx = await contract.mintCertificado(nombre, cedula, descripcion, fecha);
-        const receipt = await tx.wait();
-
-        // Decodificar logs para obtener el tokenId
-        const iface = new ethers.Interface([
-            "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)"
-        ]);
-        let tokenId;
-        for (const log of receipt.logs) {
-            try {
-                const parsed = iface.parseLog(log);
-                if (parsed && parsed.name === "Transfer") {
-                    tokenId = parsed.args.tokenId.toString();
-                    break;
-                }
-            } catch (e) {}
-        }
-
-        return res.json({ success: true, tokenId });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
+  try {
+    const { nombre, cedula, descripcion, fecha } = req.body;
+    if (!nombre || !cedula || !descripcion || !fecha) {
+      console.warn("Faltan datos en el body:", req.body);
+      return res.status(400).json({ error: "Faltan datos en el body." });
     }
+
+    console.log("Solicitud de mint con args:", {
+      nombre,
+      cedula,
+      descripcion,
+      fecha,
+    });
+
+    // 1) Envío de la tx
+    const tx = await contract.mintCertificado(
+      nombre,
+      cedula,
+      descripcion,
+      fecha
+    );
+    console.log("Transacción enviada. Hash:", tx.hash);
+
+    // 2) Espera a que mine
+    const receipt = await tx.wait();
+    console.log(
+      `Transacción minada en bloque ${receipt.blockNumber}. Logs:`,
+      receipt.logs
+    );
+
+    // 3) Decodificar logs para obtener el tokenId
+    const iface = new ethers.Interface([
+      "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
+    ]);
+    let tokenId;
+    for (const log of receipt.logs) {
+      try {
+        const parsed = iface.parseLog(log);
+        if (parsed && parsed.name === "Transfer") {
+          tokenId = parsed.args.tokenId.toString();
+          console.log("TokenId emitido:", tokenId);
+          break;
+        }
+      } catch (e) {
+        // no es un evento Transfer
+      }
+    }
+
+    return res.json({ success: true, tokenId });
+  } catch (err) {
+    console.error("Error en /mint:", err);
+    // Si viene de un revert de solidity, a veces err.error?.message o err.data puede tener la razón
+    if (err.error && err.error.message) {
+      console.error("Revert reason:", err.error.message);
+    }
+    res.status(500).json({ error: err.message });
+  }
 });
+
 
 // --- Endpoint para obtener data de un NFT ---
 app.get("/nft/:cedula", async (req, res) => {
