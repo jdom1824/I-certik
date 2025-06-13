@@ -1,24 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 
 contract CertificadosOnChainConexalab is ERC721, Ownable {
     using Strings for uint256;
+    using Counters for Counters.Counter;
+
+    // Contador de tokens mintados
+    Counters.Counter private _tokenSupply;
 
     struct Certificado {
         string nombre;
         string descripcion;
         string fecha;
     }
+    function totalSupply() public view returns (uint256) {
+        return _tokenSupply.current();
+    }
 
     // Mapping de cedula/tokenId a struct Certificado
     mapping(uint256 => Certificado) private _detalles;
 
-    constructor() ERC721("CertificadosOnChainConexalab", "CERT") Ownable(msg.sender) {}
+    constructor() ERC721("CertificadosOnChainConexalab", "CERT") {}
     
     function mintCertificado(
         string memory nombre,
@@ -33,6 +42,7 @@ contract CertificadosOnChainConexalab is ERC721, Ownable {
             descripcion: descripcion,
             fecha: fecha
         });
+        _tokenSupply.increment();
         return cedula;
     }
     function _tokenExists(uint256 tokenId) internal view returns (bool) {
