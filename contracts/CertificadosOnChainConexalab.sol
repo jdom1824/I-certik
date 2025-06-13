@@ -16,6 +16,7 @@ contract CertificadosOnChainConexalab is ERC721, Ownable {
     }
 
     mapping(uint256 => Certificado) private _detalles;
+    uint256  private _totalMinted; 
 
     constructor() ERC721("CertificadosOnChainConexalab", "CERT") Ownable(_msgSender()) {}
 
@@ -27,7 +28,7 @@ contract CertificadosOnChainConexalab is ERC721, Ownable {
     ) public onlyOwner returns (uint256) {
         // Ajustado para OZ v5
         require(_ownerOf(cedula) == address(0), "Certificado ya existe para esta cedula");
-
+        _totalMinted += 1; 
         _safeMint(msg.sender, cedula);
         _detalles[cedula] = Certificado(nombre, descripcion, fecha);
         return cedula;
@@ -46,5 +47,8 @@ contract CertificadosOnChainConexalab is ERC721, Ownable {
             "}"
         );
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(data)));
+    }
+    function totalSupply() external view returns (uint256) {
+        return _totalMinted;
     }
 }
